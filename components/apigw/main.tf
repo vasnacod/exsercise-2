@@ -22,28 +22,6 @@ resource "aws_api_gateway_method" "ordermet" {
   authorization = "NONE"
 }
 
-# Define the integration of the method with an actual service (e.g., Lambda)
-resource "aws_api_gateway_integration" "order_integration" {
-  rest_api_id = aws_api_gateway_rest_api.orderapi.id
-  resource_id   = aws_api_gateway_resource.orderres.id
-  http_method = aws_api_gateway_method.ordermet.http_method
-
-  integration_http_method = "POST"
-  type                    = "AWS" # Use appropriate integration type
-  uri                     = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${var.lambda_arn}/invocations"
-}
-
-resource "aws_api_gateway_integration_response" "order_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.orderapi.id
-  resource_id   = aws_api_gateway_resource.orderres.id
-  http_method   = aws_api_gateway_method.ordermet.http_method
-  status_code   = "200"
-  
-  response_templates = {
-    "application/json" = "{}"  # This is a simple empty JSON object
-  }
-}
-
 # Define the method response to map the integration response
 resource "aws_api_gateway_method_response" "order_method_response" {
   rest_api_id = aws_api_gateway_rest_api.orderapi.id
@@ -57,10 +35,35 @@ resource "aws_api_gateway_method_response" "order_method_response" {
   }
 }
 
+# Define the integration of the method with an actual service (e.g., Lambda)
+resource "aws_api_gateway_integration" "order_integration" {
+  rest_api_id = aws_api_gateway_rest_api.orderapi.id
+  resource_id   = aws_api_gateway_resource.orderres.id
+  http_method = aws_api_gateway_method.ordermet.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS" # Use appropriate integration type
+  uri                     = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${var.lambda_arn}/invocations"
+}
+
+
+resource "aws_api_gateway_integration_response" "order_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.orderapi.id
+  resource_id   = aws_api_gateway_resource.orderres.id
+  http_method   = aws_api_gateway_method.ordermet.http_method
+  status_code   = "200"
+  
+  response_templates = {
+    "application/json" = ""  # This is a simple empty JSON object
+  }
+  depends_on = [aws_api_gateway_integration.order_integration]
+  
+}
+
 # Define the deployment of the API
 resource "aws_api_gateway_deployment" "order_deployment" {
-  depends_on = [aws_api_gateway_integration.order_integration]
   rest_api_id = aws_api_gateway_rest_api.orderapi.id
+  depends_on = [aws_api_gateway_integration.order_integration]
   stage_name  = "dev"
 }
 
